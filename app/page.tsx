@@ -66,13 +66,19 @@ const PAYMENTS = [
   { icon: '📩', title: 'WhatsApp Bill',desc: 'Bill sent to customer WhatsApp after payment. Includes home ordering link for next visit.' },
 ]
 const STARTER = [
-  'QR ordering with serial numbers','AI kitchen batching','Bluetooth voice alerts',
-  'One click ready to serve','Cash and UPI payments','WhatsApp bill delivery',
-  'Home ordering system','Works on any device','14 days free trial',
-]
-const GROWTH  = [
-  'Everything in Starter','Unlimited WhatsApp messages','Weekly AI revenue report',
-  'Best selling item analysis','Combo and bundle suggestions','Priority support',
+  'QR ordering with serial numbers',
+  'AI kitchen batching',
+  'Bluetooth voice alerts',
+  'One click ready to serve',
+  'Cash and UPI payments',
+  'WhatsApp bill delivery',
+  'Home ordering system',
+  'Live order tracking',
+  'Revenue reports',
+  'Best selling analysis',
+  'Kitchen QR for cooks',
+  'Works on any device',
+  '14 days free trial',
 ]
 
 const F: Record<string, React.CSSProperties> = {
@@ -280,57 +286,57 @@ export default function Home() {
 
       {/* ── PRICING ──────────────────────────────────────── */}
       <section id="pricing" style={{ background: '#FFFFFF', padding: '56px 0', borderTop: '1px solid #E5E1D8' }} className="lg:!py-20">
-        <div style={F.wrap}>
-          <span style={F.lbl}>Pricing</span>
-          <h2 className="text-[26px] sm:text-[34px]" style={{ fontWeight: 800, color: '#111111', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 8px' }}>Simple pricing. No surprises.</h2>
-          <p className="text-[14px] sm:text-[15.5px]" style={{ color: '#555', marginBottom: 36 }}>14 days free on both plans. No card required. Cancel anytime.</p>
+  <div style={F.wrap}>
+    <span style={F.lbl}>Pricing</span>
+    <h2 className="text-[26px] sm:text-[34px]" style={{ fontWeight: 800, color: '#111111', lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 8px' }}>Simple pricing. Everything included.</h2>
+    <p className="text-[14px] sm:text-[15.5px]" style={{ color: '#555', marginBottom: 36 }}>14 days free. No card required. Cancel anytime.</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18, maxWidth: 760, margin: '0 auto' }}>
-            {/* Starter */}
-            <div style={{ ...F.card, padding: 24 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: '#888', textTransform: 'uppercase' as const, marginBottom: 12 }}>Starter</div>
-              <div style={{ marginBottom: 4 }}>
-                <span className="text-[32px] sm:text-[40px]" style={{ fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>₹999</span>
-                <span style={{ fontSize: 13, color: '#888', marginLeft: 6 }}>/month</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 22 }}>₹9,999/year — save ₹1,989</div>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 9, marginBottom: 22 }}>
-                {STARTER.map((f,i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                    <span style={{ color: '#C9A84C', fontSize: 12, flexShrink: 0, fontWeight: 700 }}>✓</span>
-                    <span className="text-[12.5px] sm:text-[13.5px]" style={{ color: '#333' }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <a href="/auth/login" style={{ display: 'block', textAlign: 'center' as const, border: '2px solid #111', color: '#111', borderRadius: 8, padding: '12px', fontSize: 13.5, fontWeight: 700, textDecoration: 'none' }}>
-                Start Free Trial
-              </a>
-            </div>
-
-            {/* Growth */}
-            <div style={{ ...F.card, padding: 24, border: '2px solid #C9A84C', position: 'relative' as const, background: 'linear-gradient(180deg, #FFFDF7 0%, #FFFFFF 100%)' }}>
-              <div style={{ position: 'absolute' as const, top: -11, left: 20, background: '#C9A84C', color: '#FFF', fontSize: 10, fontWeight: 700, padding: '3px 11px', borderRadius: 20, letterSpacing: '0.08em' }}>RECOMMENDED</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: '#B8923A', textTransform: 'uppercase' as const, marginBottom: 12 }}>Growth</div>
-              <div style={{ marginBottom: 4 }}>
-                <span className="text-[32px] sm:text-[40px]" style={{ fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>₹1,999</span>
-                <span style={{ fontSize: 13, color: '#888', marginLeft: 6 }}>/month</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 22 }}>₹19,999/year — save ₹3,989</div>
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 9, marginBottom: 22 }}>
-                {GROWTH.map((f,i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                    <span style={{ color: '#C9A84C', fontSize: 12, flexShrink: 0, fontWeight: 700 }}>✓</span>
-                    <span className="text-[12.5px] sm:text-[13.5px]" style={{ color: '#333' }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <a href="/auth/login" style={{ display: 'block', textAlign: 'center' as const, background: '#C9A84C', color: '#FFF', border: 'none', borderRadius: 8, padding: '12px', fontSize: 13.5, fontWeight: 700, textDecoration: 'none' }}>
-                Start Free Trial
-              </a>
-            </div>
-          </div>
+    <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: 18, maxWidth: 760, margin: '0 auto' }}>
+      {/* Monthly */}
+      <div style={{ ...F.card, padding: 24 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: '#888', textTransform: 'uppercase' as const, marginBottom: 12 }}>Monthly</div>
+        <div style={{ marginBottom: 4 }}>
+          <span className="text-[32px] sm:text-[40px]" style={{ fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>₹999</span>
+          <span style={{ fontSize: 13, color: '#888', marginLeft: 6 }}>/month</span>
         </div>
-      </section>
+        <div style={{ fontSize: 12, color: '#888', marginBottom: 22 }}>Cancel anytime</div>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 9, marginBottom: 22 }}>
+          {STARTER.map((f,i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ color: '#C9A84C', fontSize: 12, flexShrink: 0, fontWeight: 700 }}>✓</span>
+              <span className="text-[12.5px] sm:text-[13.5px]" style={{ color: '#333' }}>{f}</span>
+            </div>
+          ))}
+        </div>
+        <a href="/auth/login" style={{ display: 'block', textAlign: 'center' as const, border: '2px solid #111', color: '#111', borderRadius: 8, padding: '12px', fontSize: 13.5, fontWeight: 700, textDecoration: 'none' }}>
+          Start Free Trial
+        </a>
+      </div>
+
+      {/* Yearly */}
+      <div style={{ ...F.card, padding: 24, border: '2px solid #C9A84C', position: 'relative' as const, background: 'linear-gradient(180deg, #FFFDF7 0%, #FFFFFF 100%)' }}>
+        <div style={{ position: 'absolute' as const, top: -11, left: 20, background: '#C9A84C', color: '#FFF', fontSize: 10, fontWeight: 700, padding: '3px 11px', borderRadius: 20, letterSpacing: '0.08em' }}>SAVE ₹1,989</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: '#B8923A', textTransform: 'uppercase' as const, marginBottom: 12 }}>Yearly</div>
+        <div style={{ marginBottom: 4 }}>
+          <span className="text-[32px] sm:text-[40px]" style={{ fontWeight: 900, color: '#111', letterSpacing: '-0.03em' }}>₹9,999</span>
+          <span style={{ fontSize: 13, color: '#888', marginLeft: 6 }}>/year</span>
+        </div>
+        <div style={{ fontSize: 12, color: '#888', marginBottom: 22 }}>₹833/month · Save ₹1,989</div>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 9, marginBottom: 22 }}>
+          {STARTER.map((f,i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ color: '#C9A84C', fontSize: 12, flexShrink: 0, fontWeight: 700 }}>✓</span>
+              <span className="text-[12.5px] sm:text-[13.5px]" style={{ color: '#333' }}>{f}</span>
+            </div>
+          ))}
+        </div>
+        <a href="/auth/login" style={{ display: 'block', textAlign: 'center' as const, background: '#C9A84C', color: '#FFF', border: 'none', borderRadius: 8, padding: '12px', fontSize: 13.5, fontWeight: 700, textDecoration: 'none' }}>
+          Start Free Trial
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* ── FINAL CTA ─────────────────────────────────────── */}
       <section style={{ background: 'linear-gradient(135deg, #0F0F0F 0%, #1A1A14 60%, #14140F 100%)', padding: '56px 0' }} className="lg:!py-20">
