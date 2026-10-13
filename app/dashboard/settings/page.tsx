@@ -2,81 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-const buildPosterHtml = (
-  name: string,
-  address: string,
-  url: string,
-  mode: 'menu' | 'home'
-) => {
-  const label = mode === 'menu' ? 'Dine-in' : 'Home Order'
-  const headline = mode === 'menu'
-    ? 'Scan to<br />order food'
-    : 'Order from home.<br />Collect when ready.'
-  const sub = mode === 'menu'
-    ? 'Scan the QR code to view our menu<br />and place your order.'
-    : 'Place your order in advance and<br />pick it up when it is prepared.'
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>QR Poster</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Georgia, serif; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; gap: 24px; min-height: 100vh; }
-  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .controls button { padding: 10px 24px; border: none; background: #111; color: white; font-size: 14px; cursor: pointer; border-radius: 6px; font-family: system-ui; }
-  .poster { width: 100%; max-width: 400px; background: #fff; border: 1px solid #ddd; box-shadow: 0 4px 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; overflow: hidden; }
-  .poster-top { background: #111; padding: 28px 28px 24px; text-align: center; }
-  .restaurant-name { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 0.02em; line-height: 1.2; text-transform: uppercase; }
-  .restaurant-address { font-size: 12px; color: #888880; margin-top: 6px; font-family: system-ui; line-height: 1.4; }
-  .poster-middle { background: #fff; padding: 28px 20px 20px; display: flex; flex-direction: column; align-items: center; flex: 1; }
-  .instruction-label { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #999; font-family: system-ui; margin-bottom: 10px; }
-  .instruction-headline { font-size: 22px; font-weight: 700; color: #111; text-align: center; line-height: 1.25; margin-bottom: 6px; }
-  .instruction-sub { font-size: 13px; color: #666; text-align: center; line-height: 1.5; font-family: system-ui; margin-bottom: 24px; }
-  .qr-box { border: 2px solid #111; padding: 14px; background: #fff; margin-bottom: 16px; max-width: 100%; }
-  .qr-box img { width: 100%; max-width: 260px; height: auto; aspect-ratio: 1; display: block; }
-  .order-url { font-size: 11px; color: #999; font-family: monospace; text-align: center; word-break: break-all; }
-  .poster-footer { background: #F5F3EF; border-top: 1px solid #E5E1D8; padding: 12px 28px; text-align: center; }
-  .powered-by { font-size: 10px; color: #B8923A; font-family: system-ui; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
-  @media print {
-    body { background: #fff; padding: 0; gap: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .controls { display: none; }
-    .poster { box-shadow: none; border: none; width: 100%; max-width: 500px; margin: 0 auto; page-break-inside: avoid; }
-    .qr-box img { max-width: 320px; }
-    .restaurant-name { font-size: 32px; }
-    .instruction-headline { font-size: 26px; }
-  }
-</style>
-</head>
-<body>
-  <div class="controls">
-    <button onclick="window.print()">Print / Save as PDF</button>
-    <button onclick="window.close()">Close</button>
-  </div>
-  <div class="poster">
-    <div class="poster-top">
-      <div class="restaurant-name">${name.toUpperCase()}</div>
-      ${address ? `<div class="restaurant-address">${address}</div>` : ''}
-    </div>
-    <div class="poster-middle">
-      <div class="instruction-label">${label}</div>
-      <div class="instruction-headline">${headline}</div>
-      <div class="instruction-sub">${sub}</div>
-      <div class="qr-box">
-        <img src="${qrSrc}" alt="QR" />
-      </div>
-      <div class="order-url">${url}</div>
-    </div>
-    <div class="poster-footer">
-      <div class="powered-by">Powered by Ordexaa</div>
-    </div>
-  </div>
-</body>
-</html>`
-}
+import { buildPosterHtml } from '@/lib/poster'
 
 const compressImage = (file: File, maxSize = 512, quality = 0.85): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -273,14 +199,15 @@ export default function SettingsPage() {
   setSaving(false)
 }
 
-  const menuQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    `http://localhost:3000/menu/${restaurant.slug || 'sharma-cafe'}`
-  )}`
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'
 
-  const homeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-    `http://localhost:3000/order/${restaurant.slug || 'sharma-cafe'}`
-  )}`
+const menuQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+  `${baseUrl}/menu/${restaurant.slug || 'sharma-cafe'}`
+)}`
 
+const homeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+  `${baseUrl}/order/${restaurant.slug || 'sharma-cafe'}`
+)}`
   const inputCls = "w-full px-3 py-2.5 border border-[#EBEBEB] rounded-lg text-sm outline-none focus:border-[#C9A84C] bg-white text-black disabled:bg-gray-50 disabled:text-gray-800"
 
   const RedDot = () => <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
@@ -612,8 +539,8 @@ export default function SettingsPage() {
                   onClick={() => {
                     const slug = restaurant.slug || 'your-restaurant'
                     const url = qrType === 'menu'
-                      ? `http://localhost:3000/menu/${slug}`
-                      : `http://localhost:3000/order/${slug}`
+                      ? `${baseUrl}/menu/${slug}`
+                      : `${baseUrl}/order/${slug}`
                     const html = buildPosterHtml(
                       restaurant.name || 'Restaurant Name',
                       restaurant.address || '',
@@ -663,7 +590,7 @@ export default function SettingsPage() {
                           <div className="bg-white border border-[#EBEBEB] rounded-lg p-1.5 mb-1">
                             <img
                               src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
-                                `http://localhost:3000/menu/${restaurant.slug || 'restaurant'}?table=${n}`
+                                `${baseUrl}/menu/${restaurant.slug || 'restaurant'}?table=${n}`
                               )}`}
                               alt={`Table ${n}`}
                               className="w-full aspect-square"

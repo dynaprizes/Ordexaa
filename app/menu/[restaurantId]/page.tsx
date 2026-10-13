@@ -228,7 +228,16 @@ const { data: orderData, error: orderError } = await supabase
     return
   }
 
-  setPlacedOrder({
+  // Check if this is customer's first ever order at this restaurant
+const { count } = await supabase
+  .from('orders')
+  .select('*', { count: 'exact', head: true })
+  .eq('restaurant_id', restaurant.id)
+  .eq('customer_auth_id', user?.id || '')
+
+const isFirstOrder = count === 1
+
+setPlacedOrder({
   id: orderData.id,
   serial_number: serial,
   status: 'confirmed',
@@ -236,10 +245,11 @@ const { data: orderData, error: orderError } = await supabase
   total_amount: cartTotal,
   restaurant_slug: restaurant.slug,
   restaurant_name: restaurant.name,
+  is_first_order: isFirstOrder,
 } as any)
-  setOrderStatus('placed')
-  setCart([])
-  setShowCheckout(false)
+setOrderStatus('placed')
+setCart([])
+setShowCheckout(false)
 }
 
   const filteredItems = activeCategory === 'all'
@@ -272,7 +282,46 @@ const { data: orderData, error: orderError } = await supabase
     )
   }
 
+
   // ── Order placed screen ──────────────────────────────────────────
+
+  if (orderStatus === 'placed' && placedOrder && (placedOrder as any).is_first_order) {
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] p-6 flex items-center justify-center" style={{ fontFamily: 'system-ui' }}>
+      <div className="max-w-[400px] w-full text-center">
+
+        <div className="text-7xl mb-6 animate-bounce">🎉</div>
+
+        <h1 className="text-3xl font-black text-[#111] mb-3">First Order!</h1>
+        <p className="text-sm text-gray-500 mb-8 leading-relaxed">
+          Welcome to <strong>{restaurant.name}</strong>.<br />
+          This is your first order here.
+        </p>
+
+        <div className="bg-white border-2 border-[#C9A84C] rounded-2xl p-6 mb-6">
+          <div className="text-[11px] font-semibold text-gray-500 tracking-widest uppercase mb-2">
+            Your Order Serial
+          </div>
+          <div className="text-6xl font-black text-[#C9A84C] font-mono leading-none mb-2">
+            {placedOrder.serial_number}
+          </div>
+          <div className="text-xs text-gray-500">
+            Show this at the counter
+          </div>
+        </div>
+
+        <button
+          onClick={() => { setPlacedOrder(p => p ? { ...p, is_first_order: false } as any : p) }}
+          className="w-full py-3.5 bg-[#111111] text-white rounded-xl text-sm font-semibold"
+        >
+          Track My Order →
+        </button>
+
+      </div>
+    </div>
+  )
+}
+
   if (orderStatus === 'placed' && placedOrder) {
     const sc = statusLabel[placedOrder.status] || statusLabel.confirmed
     const statuses = ['confirmed', 'preparing', 'ready']
