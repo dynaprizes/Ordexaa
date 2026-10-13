@@ -66,7 +66,6 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState('')
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [qrType, setQrType] = useState<'menu' | 'home'>('menu')
-  const [showTableQrs, setShowTableQrs] = useState(false)
   const [editBasic, setEditBasic] = useState(false)
   const [editGst, setEditGst] = useState(false)
 
@@ -568,47 +567,7 @@ const homeQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data
                 </button>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-[#F5F5F5]">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="text-[11px] font-semibold text-gray-500 tracking-wider uppercase">Table QRs</div>
-                  <button
-                    onClick={() => setShowTableQrs(!showTableQrs)}
-                    className="text-[11px] text-[#C9A84C] font-medium"
-                  >
-                    {showTableQrs ? 'Hide' : 'Show'}
-                  </button>
-                </div>
 
-                {showTableQrs && (
-                  <>
-                    <p className="text-[10px] text-gray-600 mb-3">
-                      Each QR tagged with table number
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[1, 2, 3, 4, 5, 6].map(n => (
-                        <div key={n} className="text-center">
-                          <div className="bg-white border border-[#EBEBEB] rounded-lg p-1.5 mb-1">
-                            <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
-                                `${baseUrl}/menu/${restaurant.slug || 'restaurant'}?table=${n}`
-                              )}`}
-                              alt={`Table ${n}`}
-                              className="w-full aspect-square"
-                            />
-                          </div>
-                          <div className="text-[9px] text-gray-500 font-medium">Table {n}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => window.print()}
-                      className="w-full mt-3 bg-white border border-[#EBEBEB] text-gray-700 px-3 py-2 rounded-lg text-xs font-semibold"
-                    >
-                      🖨 Print all tables
-                    </button>
-                  </>
-                )}
-              </div>
 
               <div className="mt-4 pt-4 border-t border-[#F5F5F5] text-[11px] text-gray-600 space-y-1.5">
                 <div className="flex justify-between">
