@@ -69,10 +69,10 @@ const fetchData = useCallback(async () => {
   
 
   // Fetch restaurant by ID
-  const { data: rest } = await supabase
+const { data: rest } = await supabase
   .from('restaurants')
   .select('id, name, slug, logo_url, address, upi_id')
-  .or(`id.eq.${restaurantId},slug.eq.${restaurantId}`)
+  .eq('slug', restaurantId)
   .maybeSingle()
 
   if (!rest) {
