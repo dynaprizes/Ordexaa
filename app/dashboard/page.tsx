@@ -133,12 +133,10 @@ if (sub) setSubscription(sub)
     if (restaurantId) fetchOrders(restaurantId)
   }
 
-  const cashPending = orders.filter(o =>
-    o.payment_method === 'cash' && o.payment_status === 'pending'
-  )
+  const cashPending = orders.filter(o => o.payment_status === 'pending')
 
   const filteredOrders = orders
-    .filter(o => !(o.payment_method === 'cash' && o.payment_status === 'pending'))
+  .filter(o => o.payment_status !== 'pending')
     .filter(o => {
       if (filter === 'active') return ['confirmed', 'preparing'].includes(o.status)
       if (filter === 'ready') return o.status === 'ready'
