@@ -53,6 +53,7 @@ export default function CustomerMenuPage({ params }: { params: { restaurantId: s
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCheckout, setShowCheckout] = useState(false)
+  const [showUpiQr, setShowUpiQr] = useState(false)
 
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
@@ -196,7 +197,7 @@ const { data: orderData, error: orderError } = await supabase
     customer_phone: customerPhone || null,
     total_amount: cartTotal,
     payment_method: paymentMethod,
-    payment_status: paymentMethod === 'cash' ? 'pending' : 'paid',
+    payment_status: 'pending',
     status: 'confirmed',
     is_home_order: false,
   })
@@ -403,7 +404,7 @@ setShowCheckout(false)
 {customerPhone && customerPhone.length === 10 && (
   <a
     href={`https://wa.me/91${customerPhone}?text=${encodeURIComponent(
-      `🍽️ ${placedOrder.restaurant_name || restaurant.name}\n\nOrder #${placedOrder.serial_number} confirmed.\nTotal: ₹${placedOrder.total_amount || 0}\n\n🔗 View bill: http://localhost:3000/bill/${placedOrder.id}\n🏠 Order from home: http://localhost:3000/order/${placedOrder.restaurant_slug || ''}\n\nThank you!`
+      `🍽️ ${placedOrder.restaurant_name || restaurant.name}\n\nOrder #${placedOrder.serial_number} confirmed.\nTotal: ₹${placedOrder.total_amount || 0}\n\n🔗 View bill: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/bill/${placedOrder.id}\n🏠 Order again: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/order/${placedOrder.restaurant_slug || ''}\n\nThank you!`
     )}`}
     target="_blank"
     rel="noreferrer"
@@ -640,46 +641,89 @@ setShowCheckout(false)
                 </div>
               </div>
 
-              {/* Payment method */}
-              <div className="mb-6">
-                <div className="text-[13px] font-semibold text-gray-500 mb-3">Payment Method</div>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {(['upi', 'cash'] as const).map(method => (
-                    <button
-                      key={method}
-                      onClick={() => setPaymentMethod(method)}
-                      className="py-3.5 rounded-xl text-center"
-                      style={{
-                        border: `2px solid ${paymentMethod === method ? '#C9A84C' : '#EBEBEB'}`,
-                        background: paymentMethod === method ? '#FBF7ED' : '#FFFFFF',
-                      }}
-                    >
-                      <div className="text-xl mb-1">{method === 'upi' ? '📱' : '💵'}</div>
-                      <div
-                        className="text-[13px] font-bold"
-                        style={{ color: paymentMethod === method ? '#92400E' : '#444' }}
-                      >
-                        {method === 'upi' ? 'Pay via UPI' : 'Pay Cash'}
-                      </div>
-                      <div className="text-[11px] text-gray-400 mt-0.5">
-                        {method === 'upi' ? 'Instant confirmation' : 'Pay at counter'}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+{/* Payment Method */}
+<div className="mt-5">
+  <div className="text-[13px] font-semibold text-gray-500 mb-3">Payment Method</div>
 
-              {orderError && (
-                <div className="text-[13px] text-red-600 mb-3.5 text-center">{orderError}</div>
-              )}
+  <div className="grid grid-cols-2 gap-2.5 mb-3">
+    {(['upi', 'cash'] as const).map(method => (
+      <button
+        key={method}
+        onClick={() => { setPaymentMethod(method); setShowUpiQr(false) }}
+        className="py-3.5 rounded-xl text-center"
+        style={{
+          border: `2px solid ${paymentMethod === method ? '#C9A84C' : '#EBEBEB'}`,
+          background: paymentMethod === method ? '#FBF7ED' : '#FFFFFF',
+        }}
+      >
+        <div className="text-xl mb-1">{method === 'upi' ? '📱' : '💵'}</div>
+        <div
+          className="text-[13px] font-bold"
+          style={{ color: paymentMethod === method ? '#92400E' : '#444' }}
+        >
+          {method === 'upi' ? 'Pay via UPI' : 'Pay Cash'}
+        </div>
+      </button>
+    ))}
+  </div>
+
+  {paymentMethod === 'upi' && (
+    <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 space-y-3">
+      {restaurant?.upi_id ? (
+        <>
+          <div className="text-[11px] font-semibold text-[#1E40AF] uppercase tracking-wider">
+            Pay ₹{cartTotal} to
+          </div>
+          <div className="text-sm font-bold text-[#1E40AF]">{restaurant.upi_id}</div>
+
+          <a
+            href={`upi://pay?pa=${encodeURIComponent(restaurant.upi_id)}&pn=${encodeURIComponent(restaurant.name)}&am=${cartTotal}&cu=INR&tn=${encodeURIComponent('Order payment')}`}
+            className="block text-center w-full py-3 bg-[#1E40AF] text-white rounded-lg font-semibold text-sm no-underline"
+          >
+            📱 Open UPI App
+          </a>
+
+          <button
+            type="button"
+            onClick={() => setShowUpiQr(!showUpiQr)}
+            className="w-full py-2.5 bg-white border border-[#BFDBFE] text-[#1E40AF] rounded-lg font-semibold text-xs"
+          >
+            {showUpiQr ? 'Hide QR' : '🔳 Show QR Code'}
+          </button>
+
+          {showUpiQr && (
+            <div className="bg-white p-4 rounded-lg text-center">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                  `upi://pay?pa=${restaurant.upi_id}&pn=${encodeURIComponent(restaurant.name)}&am=${cartTotal}&cu=INR&tn=${encodeURIComponent('Order payment')}`
+                )}`}
+                alt="UPI QR"
+                className="w-full max-w-[200px] mx-auto"
+              />
+              <p className="text-[10px] text-gray-500 mt-2">Scan with any UPI app</p>
+            </div>
+          )}
+
+          <div className="text-[10px] text-[#1E40AF] text-center leading-relaxed">
+            After payment, tap "I've Paid" below. Owner will verify and start preparing.
+          </div>
+        </>
+      ) : (
+        <div className="text-[11px] text-red-600 text-center">
+          UPI not configured. Please pay cash.
+        </div>
+      )}
+    </div>
+  )}
+</div>
 
               <button
-                onClick={placeOrder}
-                disabled={orderStatus === 'placing'}
-                className="w-full py-4 bg-[#C9A84C] text-white rounded-xl text-[15px] font-bold disabled:opacity-70"
-              >
-                {orderStatus === 'placing' ? 'Placing Order...' : `Place Order — ₹${cartTotal}`}
-              </button>
+  onClick={placeOrder}
+  disabled={orderStatus === 'placing'}
+  className="w-full py-4 bg-[#C9A84C] text-white rounded-xl text-[15px] font-bold disabled:opacity-70 mt-4"
+>
+  {orderStatus === 'placing' ? 'Placing Order...' : paymentMethod === 'upi' ? `I've Paid — Place Order` : `Place Order — ₹${cartTotal}`}
+</button>
             </div>
           </div>
         </div>

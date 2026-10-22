@@ -269,7 +269,7 @@ if (sub) setSubscription(sub)
         {cashPending.length > 0 && (
           <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4 sm:p-5 mb-4 sm:mb-5">
             <div className="text-[10px] sm:text-[11px] font-semibold text-[#92400E] tracking-widest uppercase mb-3">
-              Cash Pending — {cashPending.length} order{cashPending.length > 1 ? 's' : ''}
+              Payment Pending — {cashPending.length} order{cashPending.length > 1 ? 's' : ''}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {cashPending.map(o => (
