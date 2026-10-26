@@ -111,38 +111,50 @@ if (sub) setSubscription(sub)
   }
 
   const confirmCash = async () => {
-    if (!cashSerial.trim() || cashSerial.length !== 4) {
-      setCashError('Enter 4-digit serial number')
-      return
-    }
-    const order = orders.find(o =>
-      o.serial_number === cashSerial &&
-      o.payment_method === 'cash' &&
-      o.payment_status === 'pending'
-    )
-    if (!order) {
-      setCashError('Order not found. Check serial number.')
-      return
-    }
-    await supabase
-      .from('orders')
-      .update({ payment_status: 'paid', status: 'confirmed' })
-      .eq('id', order.id)
-    setCashSerial('')
-    setCashError('')
-    if (restaurantId) fetchOrders(restaurantId)
+  if (!cashSerial.trim() || cashSerial.length !== 4) {
+    setCashError('Enter 4-digit serial number')
+    return
   }
+  const order = orders.find(o =>
+    o.serial_number === cashSerial &&
+    o.payment_status === 'pending'
+  )
+  if (!order) {
+    setCashError('Order not found. Check serial number.')
+    return
+  }
+  const { error } = await supabase
+    .from('orders')
+    .update({ payment_status: 'paid', status: 'confirmed' })
+    .eq('id', order.id)
+  
+  if (error) {
+    setCashError('Failed: ' + error.message)
+    return
+  }
+  
+  setCashSerial('')
+  setCashError('')
+  if (restaurantId) fetchOrders(restaurantId)
+}
 
   const cashPending = orders.filter(o => o.payment_status === 'pending')
 
+  const homeOrders = orders.filter(o => 
+  o.is_home_order && 
+  o.payment_status === 'paid' && 
+  ['confirmed', 'preparing', 'ready'].includes(o.status)
+)
+
   const filteredOrders = orders
   .filter(o => o.payment_status !== 'pending')
-    .filter(o => {
-      if (filter === 'active') return ['confirmed', 'preparing'].includes(o.status)
-      if (filter === 'ready') return o.status === 'ready'
-      if (filter === 'all') return true
-      return true
-    })
+  .filter(o => !o.is_home_order)
+  .filter(o => {
+    if (filter === 'active') return ['confirmed', 'preparing'].includes(o.status)
+    if (filter === 'ready') return o.status === 'ready'
+    if (filter === 'all') return true
+    return true
+  })
     .filter(o => {
       if (!searchSerial.trim()) return true
       return o.serial_number.includes(searchSerial.trim())
@@ -297,13 +309,49 @@ if (sub) setSubscription(sub)
               <button
                 onClick={confirmCash}
                 className="px-5 py-2.5 bg-[#C9A84C] text-white rounded-lg text-[13px] font-semibold"
-              >
-                Confirm Cash
-              </button>
+              >Confirm Payment</button>
               {cashError && <span className="text-xs text-red-600">{cashError}</span>}
             </div>
           </div>
         )}
+{/* Home Orders Panel */}
+{homeOrders.length > 0 && (
+  <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 sm:p-5 mb-4 sm:mb-5">
+    <div className="text-[10px] sm:text-[11px] font-semibold text-[#1E40AF] tracking-widest uppercase mb-3">
+      🏠 Home Orders — {homeOrders.length} in progress
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+      {homeOrders.map(o => {
+        const sc = o.status === 'confirmed' ? { label: 'Confirmed', bg: '#FEF9EC', text: '#92400E', border: '#FDE68A' }
+          : o.status === 'preparing' ? { label: 'Preparing', bg: '#EFF6FF', text: '#1E40AF', border: '#BFDBFE' }
+          : { label: 'Ready ✓', bg: '#F0FDF4', text: '#15803D', border: '#BBF7D0' }
+        
+        return (
+          <div 
+            key={o.id} 
+            onClick={() => setSelectedOrder(o)}
+            className="bg-white p-3 rounded-lg border border-[#BFDBFE] cursor-pointer hover:border-[#1E40AF] transition-colors"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-mono text-lg font-bold text-[#C9A84C]">#{o.serial_number}</span>
+              <span 
+                className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: sc.bg, color: sc.text, border: `1px solid ${sc.border}` }}
+              >
+                {sc.label}
+              </span>
+            </div>
+            <div className="text-sm font-semibold text-[#111]">{o.customer_name || 'No name'}</div>
+            {o.customer_phone && (
+              <div className="text-[11px] text-gray-500 mt-0.5">📱 {o.customer_phone}</div>
+            )}
+            <div className="text-[11px] text-gray-500 mt-1">₹{o.total_amount}</div>
+          </div>
+        )
+      })}
+    </div>
+  </div>
+)}
 
         {/* Controls */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4 sm:mb-5">

@@ -258,11 +258,12 @@ setShowCheckout(false)
     : items.filter(i => i.category_id === activeCategory)
 
   const statusLabel: Record<string, { label: string; color: string; bg: string }> = {
-    confirmed: { label: 'Order Confirmed', color: '#92400E', bg: '#FEF9EC' },
-    preparing: { label: 'Being Prepared', color: '#1E40AF', bg: '#EFF6FF' },
-    ready:     { label: 'Ready to Collect!', color: '#15803D', bg: '#F0FDF4' },
-    completed: { label: 'Collected', color: '#6B7280', bg: '#F9FAFB' },
-  }
+  pending:   { label: 'Waiting for Confirmation', color: '#B45309', bg: '#FEF9EC' },
+  confirmed: { label: 'Order Confirmed', color: '#92400E', bg: '#FEF9EC' },
+  preparing: { label: 'Being Prepared', color: '#1E40AF', bg: '#EFF6FF' },
+  ready:     { label: 'Ready to Collect!', color: '#15803D', bg: '#F0FDF4' },
+  completed: { label: 'Collected', color: '#6B7280', bg: '#F9FAFB' },
+}
 
   if (loading) {
     return (
@@ -325,7 +326,7 @@ setShowCheckout(false)
 
   if (orderStatus === 'placed' && placedOrder) {
     const sc = statusLabel[placedOrder.status] || statusLabel.confirmed
-    const statuses = ['confirmed', 'preparing', 'ready']
+    const statuses = ['pending', 'confirmed', 'preparing', 'ready']
     const currentIdx = statuses.indexOf(placedOrder.status)
 
     return (
@@ -387,11 +388,11 @@ setShowCheckout(false)
                         color: active ? '#111' : done ? '#666' : '#CCC'
                       }}
                     >
-                      {s === 'confirmed' ? 'Order Confirmed' : s === 'preparing' ? 'Being Prepared' : 'Ready to Collect'}
+                     {s === 'pending' ? 'Waiting for Owner Confirmation' : s === 'confirmed' ? 'Order Confirmed' : s === 'preparing' ? 'Being Prepared' : 'Ready to Collect'}
                     </div>
                     {active && (
                       <div className="text-[11px] text-gray-400 mt-0.5">
-                        {s === 'confirmed' ? 'Your order is in queue' : s === 'preparing' ? 'Kitchen is preparing your order' : 'Please collect from counter'}
+                       {s === 'pending' ? 'Owner is verifying your payment' : s === 'confirmed' ? 'Your order is in queue' : s === 'preparing' ? 'Kitchen is preparing your order' : 'Please collect from counter'}
                       </div>
                     )}
                   </div>
@@ -404,7 +405,17 @@ setShowCheckout(false)
 {customerPhone && customerPhone.length === 10 && (
   <a
     href={`https://wa.me/91${customerPhone}?text=${encodeURIComponent(
-      `🍽️ ${placedOrder.restaurant_name || restaurant.name}\n\nOrder #${placedOrder.serial_number} confirmed.\nTotal: ₹${placedOrder.total_amount || 0}\n\n🔗 View bill: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/bill/${placedOrder.id}\n🏠 Order again: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/order/${placedOrder.restaurant_slug || ''}\n\nThank you!`
+      `🍽️ ${placedOrder.restaurant_name || restaurant.name}\n\nOrder #${placedOrder.serial_number} 
+      {placedOrder.status === 'pending' && (
+  <div className="mt-4 pt-4 border-t border-[#FDE68A] text-center">
+    <div className="text-[11px] text-[#92400E] leading-relaxed">
+      {paymentMethod === 'upi' 
+        ? '⏳ Show your payment confirmation to the staff. Order will start once owner verifies.'
+        : '⏳ Pay at the counter. Order will start once owner confirms payment.'}
+    </div>
+  </div>
+)}
+  confirmed.\nTotal: ₹${placedOrder.total_amount || 0}\n\n🔗 View bill: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/bill/${placedOrder.id}\n🏠 Order again: ${typeof window !== 'undefined' ? window.location.origin : 'https://ordexaa.site'}/order/${placedOrder.restaurant_slug || ''}\n\nThank you!`
     )}`}
     target="_blank"
     rel="noreferrer"
@@ -643,6 +654,40 @@ setShowCheckout(false)
 
 {/* Payment Method */}
 <div className="mt-5">
+
+  {/* Payment Mind Map */}
+<div className="mb-4 bg-[#FBF7ED] border border-[#F5D98B] rounded-xl p-4">
+  <div className="text-[11px] font-bold text-[#92400E] tracking-wider uppercase mb-3">
+    How Payment Works
+  </div>
+
+  <div className="space-y-2.5">
+    <div className="flex items-start gap-2">
+      <span className="text-base">💵</span>
+      <div className="flex-1">
+        <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">Cash</div>
+        <div className="text-[11px] text-[#B45309] leading-relaxed">
+          Place order → Pay at counter → Owner confirms
+        </div>
+      </div>
+    </div>
+
+    <div className="flex items-start gap-2">
+      <span className="text-base">📱</span>
+      <div className="flex-1">
+        <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">UPI</div>
+        <div className="text-[11px] text-[#B45309] leading-relaxed">
+          Place order → Pay via UPI app → Show to owner → Owner confirms
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="mt-3 pt-3 border-t border-[#F5D98B] text-[11px] text-[#92400E] font-medium leading-relaxed">
+    ⚠️ Food preparation starts only after owner confirms your payment.
+  </div>
+</div>
+
   <div className="text-[13px] font-semibold text-gray-500 mb-3">Payment Method</div>
 
   <div className="grid grid-cols-2 gap-2.5 mb-3">
