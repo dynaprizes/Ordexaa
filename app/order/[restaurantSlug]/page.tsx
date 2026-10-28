@@ -42,7 +42,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
   // Init
   useEffect(() => {
     const init = async () => {
-      // Anonymous session
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         await supabase.auth.signInAnonymously()
@@ -53,7 +52,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
   }, [])
 
   const fetchData = useCallback(async () => {
-    // Get restaurant by slug
     const { data: rest } = await supabase
       .from('restaurants')
       .select('id, name, slug, logo_url, address, upi_id')
@@ -81,7 +79,7 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
     setLoading(false)
   }, [params.restaurantSlug])
 
-  // Poll for order status updates
+  // Poll for order status
   useEffect(() => {
     if (!placedOrder) return
     const interval = setInterval(async () => {
@@ -118,14 +116,21 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
   const cartTotal = cart.reduce((sum, c) => sum + c.price * c.quantity, 0)
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0)
 
+  // Fixed placeOrder — no duplicate function
   const placeOrder = async () => {
     setPhoneError('')
     setOrderError('')
+
+    if (!customerName.trim()) {
+      setOrderError('Please enter your name')
+      return
+    }
 
     if (!customerPhone || customerPhone.length !== 10) {
       setPhoneError('Phone number is required for home orders')
       return
     }
+
     if (!restaurant) return
 
     setPlacing(true)
@@ -133,7 +138,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
     const { data: { user } } = await supabase.auth.getUser()
     const serial = String(Math.floor(1000 + Math.random() * 9000))
 
-    // Insert order
     const { data: orderData, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -144,7 +148,7 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
         customer_phone: customerPhone,
         total_amount: cartTotal,
         payment_method: 'upi',
-        payment_status: 'paid',
+        payment_status: 'pending',
         status: 'confirmed',
         is_home_order: true,
       })
@@ -157,7 +161,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
       return
     }
 
-    // Insert items
     const orderItems = cart.map(c => ({
       order_id: orderData.id,
       menu_item_id: c.id,
@@ -175,12 +178,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
       setPlacing(false)
       return
     }
-
-    // MOCK WhatsApp log
-    console.log('📱 WhatsApp Home Order Confirmation (MOCK)')
-    console.log('   To:', `+91${customerPhone}`)
-    console.log('   Restaurant:', restaurant.name)
-    console.log('   Order #:', serial)
 
     setPlacedOrder({
       id: orderData.id,
@@ -218,7 +215,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
     )
   }
 
-  // Order placed screen
   if (placedOrder) {
     const sc = statusLabel[placedOrder.status] || statusLabel.confirmed
     const statuses = ['confirmed', 'preparing', 'ready']
@@ -325,7 +321,6 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
     )
   }
 
-  // Main menu
   return (
     <div className="min-h-screen bg-[#FAFAFA]" style={{ fontFamily: 'system-ui, sans-serif', paddingBottom: cartCount > 0 ? 90 : 0 }}>
 
@@ -505,7 +500,7 @@ export default function HomeOrderingPage({ params }: { params: { restaurantSlug:
                 <div className="flex flex-col gap-2.5">
                   <input
                     type="text"
-                    placeholder="Your name (optional)"
+                    placeholder="Your name * (required)"
                     value={customerName}
                     onChange={e => setCustomerName(e.target.value)}
                     className="px-3 py-2.5 border border-[#EBEBEB] rounded-lg text-sm text-[#111] outline-none focus:border-[#C9A84C] bg-white"

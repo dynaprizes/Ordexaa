@@ -177,10 +177,9 @@ useEffect(() => {
 const placeOrder = async () => {
   if (cart.length === 0 || !restaurant) return
   
-  // Add this check
+  // ✅ Add name validation
   if (!customerName.trim()) {
-    setOrderError('Please enter your name')
-    setOrderStatus('error')
+    setOrderError('Please enter your name to place order')
     return
   }
   

@@ -35,6 +35,41 @@ const COMMON_ITEMS: Record<string, string[]> = {
 
 const COMMON_PREP_TIMES = [5, 7, 10, 15, 20, 25, 30]
 
+// Image compression helper
+const compressImage = (file: File, maxSize = 800, quality = 0.85): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let { width, height } = img
+        if (width > height && width > maxSize) {
+          height = (height * maxSize) / width
+          width = maxSize
+        } else if (height > maxSize) {
+          width = (width * maxSize) / height
+          height = maxSize
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('Canvas not supported')); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob(
+          blob => blob ? resolve(blob) : reject(new Error('Compression failed')),
+          'image/jpeg',
+          quality
+        )
+      }
+      img.onerror = () => reject(new Error('Invalid image'))
+      img.src = reader.result as string
+    }
+    reader.onerror = () => reject(new Error('Read failed'))
+    reader.readAsDataURL(file)
+  })
+}
+
 export default function MenuManagement() {
   const supabase = createClient()
 
@@ -50,6 +85,8 @@ export default function MenuManagement() {
   const [customItem, setCustomItem] = useState('')
   const [inlineNewCategory, setInlineNewCategory] = useState(false)
   const [inlineCategoryName, setInlineCategoryName] = useState('')
+  const [uploadingImage, setUploadingImage] = useState(false)
+  
   const [newItem, setNewItem] = useState({
     name: '', price: '', prep_time: '10', description: '', category_id: '', image_url: ''
   })
@@ -104,6 +141,39 @@ export default function MenuManagement() {
     if (hasItems) { alert('Remove all items from this category first.'); return }
     await supabase.from('menu_categories').delete().eq('id', catId)
     refresh()
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !restaurantId) return
+
+    setUploadingImage(true)
+    setItemError('')
+
+    try {
+      const blob = await compressImage(file, 800, 0.85)
+      const fileName = `${restaurantId}/item-${Date.now()}.jpg`
+
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(fileName, blob, { contentType: 'image/jpeg' })
+
+      if (uploadError) {
+        setItemError('Image upload failed: ' + uploadError.message)
+        setUploadingImage(false)
+        return
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(fileName)
+
+      setNewItem({ ...newItem, image_url: urlData.publicUrl })
+    } catch (err) {
+      setItemError('Image processing failed')
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const addItem = async () => {
@@ -384,9 +454,35 @@ export default function MenuManagement() {
                 <input type="text" placeholder="Short description of the dish" value={newItem.description} onChange={e => setNewItem({ ...newItem, description: e.target.value })} className={inputCls} />
               </div>
 
+              {/* UPDATED: Image Upload Section */}
               <div className="sm:col-span-2">
-                <label className="text-xs text-gray-600 block mb-1.5">Image URL (optional)</label>
-                <input type="text" placeholder="https://..." value={newItem.image_url} onChange={e => setNewItem({ ...newItem, image_url: e.target.value })} className={inputCls} />
+                <label className="text-xs text-gray-600 block mb-1.5">Item Image (optional)</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-lg bg-[#F8F8F8] border border-[#EBEBEB] flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {newItem.image_url ? (
+                      <img src={newItem.image_url} alt="Item" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xl">🍽</span>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1">
+                    <label className="inline-block px-4 py-2 bg-white border border-[#EBEBEB] rounded-lg text-xs font-medium text-gray-700 cursor-pointer">
+                      {uploadingImage ? 'Uploading...' : 'Choose Image'}
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={uploadingImage} />
+                    </label>
+                    {newItem.image_url && (
+                      <button
+                        type="button"
+                        onClick={() => setNewItem({ ...newItem, image_url: '' })}
+                        className="ml-2 px-3 py-2 text-xs text-red-600"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <p className="text-[11px] text-gray-600 mt-1.5">JPG or PNG, max 5MB</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -494,17 +590,17 @@ export default function MenuManagement() {
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-[#F8F8F8] border border-[#EBEBEB] flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {item.image_url ? (
                         <img 
-  src={item.image_url} 
-  alt={item.name} 
-  className="w-full h-full object-cover" 
-  onError={e => { 
-    const img = e.target as HTMLImageElement
-    img.onerror = null  // prevent infinite loop
-    img.src = ''        // clear broken src
-    img.style.display = 'none'
-    img.parentElement!.innerHTML = '<span class="text-xl">🍽</span>'
-  }}
-/>
+                          src={item.image_url} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover" 
+                          onError={e => { 
+                            const img = e.target as HTMLImageElement
+                            img.onerror = null
+                            img.src = ''
+                            img.style.display = 'none'
+                            img.parentElement!.innerHTML = '<span class="text-xl">🍽</span>'
+                          }}
+                        />
                       ) : (
                         <span className="text-xl">🍽</span>
                       )}
