@@ -21,8 +21,6 @@ type Item = {
   is_available: boolean
 }
 
-const COMMON_CATEGORIES = ['Beverages', 'Snacks', 'Main Course', 'Desserts', 'Breakfast', 'Starters', 'Rice & Roti']
-
 const COMMON_ITEMS: Record<string, string[]> = {
   'Beverages': ['Cutting Chai', 'Cold Coffee', 'Masala Chai', 'Lemon Tea', 'Lassi', 'Fresh Lime Soda', 'Buttermilk', 'Cold Drink'],
   'Snacks': ['Cheese Maggi', 'Samosa', 'Vada Pav', 'Pav Bhaji', 'French Fries', 'Sandwich', 'Momos', 'Spring Roll'],
@@ -44,21 +42,17 @@ export default function MenuManagement() {
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('all')
 
-  const [showCatForm, setShowCatForm] = useState(false)
-  const [catMode, setCatMode] = useState<'pick' | 'new'>('pick')
-  const [pickedCat, setPickedCat] = useState('')
-  const [customCat, setCustomCat] = useState('')
-
   const [showItemForm, setShowItemForm] = useState(false)
   const [itemMode, setItemMode] = useState<'pick' | 'new'>('pick')
   const [pickedItem, setPickedItem] = useState('')
   const [customItem, setCustomItem] = useState('')
+  const [inlineNewCategory, setInlineNewCategory] = useState(false)
+  const [inlineCategoryName, setInlineCategoryName] = useState('')
   const [newItem, setNewItem] = useState({
     name: '', price: '', prep_time: '10', description: '', category_id: '', image_url: ''
   })
   const [itemError, setItemError] = useState('')
 
-  // Load restaurant + data
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -98,27 +92,6 @@ export default function MenuManagement() {
 
   const refresh = () => { if (restaurantId) fetchData(restaurantId) }
 
-  // ── Add Category ─────────────────────────────────────────────────
-  const addCategory = async () => {
-    const name = catMode === 'pick' ? pickedCat : customCat.trim()
-    if (!name || !restaurantId) return
-    if (categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
-      alert('Category already exists')
-      return
-    }
-
-    const { error } = await supabase.from('menu_categories').insert({
-      name,
-      restaurant_id: restaurantId,
-      display_order: categories.length + 1,
-      is_active: true,
-    })
-
-    if (error) { alert('Error: ' + error.message); return }
-    setPickedCat(''); setCustomCat(''); setShowCatForm(false)
-    refresh()
-  }
-
   const toggleCategory = async (cat: Category) => {
     await supabase.from('menu_categories').update({ is_active: !cat.is_active }).eq('id', cat.id)
     refresh()
@@ -131,7 +104,6 @@ export default function MenuManagement() {
     refresh()
   }
 
-  // ── Add Item ─────────────────────────────────────────────────────
   const addItem = async () => {
     setItemError('')
     const name = itemMode === 'pick' ? pickedItem : customItem.trim()
@@ -169,9 +141,7 @@ export default function MenuManagement() {
   }
 
   const filteredItems = activeCategory === 'all' ? items : items.filter(i => i.category_id === activeCategory)
-
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || '—'
-
   const getCommonItems = () => {
     if (!newItem.category_id) return []
     const catName = categories.find(c => c.id === newItem.category_id)?.name
@@ -218,79 +188,13 @@ export default function MenuManagement() {
               {categories.length} categories · {items.length} items
             </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => { setShowCatForm(s => !s); setShowItemForm(false); setCatMode('pick'); setPickedCat('') }}
-              className="flex-1 sm:flex-none px-4 py-2 bg-white border border-[#EBEBEB] rounded-lg text-xs sm:text-[13px] font-medium text-gray-700"
-            >
-              + Category
-            </button>
-            <button
-              onClick={() => { setShowItemForm(s => !s); setShowCatForm(false); setItemMode('pick'); setPickedItem('') }}
-              className="flex-1 sm:flex-none px-4 py-2 bg-[#C9A84C] text-white rounded-lg text-xs sm:text-[13px] font-semibold"
-            >
-              + Add Item
-            </button>
-          </div>
+          <button
+            onClick={() => setShowItemForm(s => !s)}
+            className="px-4 py-2 bg-[#C9A84C] text-white rounded-lg text-xs sm:text-[13px] font-semibold"
+          >
+            + Add Item
+          </button>
         </div>
-
-        {/* Add Category Form */}
-        {showCatForm && (
-          <div className="bg-white border border-[#EBEBEB] rounded-xl p-4 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-[13px] font-semibold text-[#111]">Add Category</div>
-              <div className="flex gap-1 p-0.5 bg-gray-100 rounded-lg">
-                <button onClick={() => setCatMode('pick')} className={`px-3 py-1 text-xs rounded-md font-medium ${catMode === 'pick' ? 'bg-white text-[#111] shadow-sm' : 'text-gray-500'}`}>Pick</button>
-                <button onClick={() => setCatMode('new')} className={`px-3 py-1 text-xs rounded-md font-medium ${catMode === 'new' ? 'bg-white text-[#111] shadow-sm' : 'text-gray-500'}`}>New</button>
-              </div>
-            </div>
-
-            {catMode === 'pick' ? (
-              <div>
-                <div className="text-xs text-gray-500 mb-2">Choose common category</div>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {COMMON_CATEGORIES.filter(c => !categories.some(cat => cat.name.toLowerCase() === c.toLowerCase())).map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setPickedCat(c)}
-                      className="px-3.5 py-2 rounded-lg text-xs font-medium border transition"
-                      style={{
-                        borderColor: pickedCat === c ? '#C9A84C' : '#EBEBEB',
-                        background: pickedCat === c ? '#FBF7ED' : '#FFFFFF',
-                        color: pickedCat === c ? '#C9A84C' : '#444',
-                      }}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                  {COMMON_CATEGORIES.filter(c => !categories.some(cat => cat.name.toLowerCase() === c.toLowerCase())).length === 0 && (
-                    <div className="text-xs text-gray-400 italic">All common categories added</div>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addCategory} disabled={!pickedCat} className="px-5 py-2 bg-[#C9A84C] text-white rounded-lg text-[13px] font-semibold disabled:opacity-40">Save</button>
-                  <button onClick={() => { setShowCatForm(false); setPickedCat(''); setCustomCat('') }} className="px-5 py-2 bg-white border border-[#EBEBEB] text-gray-600 rounded-lg text-[13px] font-medium">Cancel</button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter custom category name"
-                  value={customCat}
-                  onChange={e => setCustomCat(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addCategory()}
-                  className={inputCls + ' flex-1'}
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button onClick={addCategory} className="flex-1 sm:flex-none px-5 py-2 bg-[#C9A84C] text-white rounded-lg text-[13px] font-semibold">Save</button>
-                  <button onClick={() => { setShowCatForm(false); setCustomCat('') }} className="flex-1 sm:flex-none px-5 py-2 bg-white border border-[#EBEBEB] text-gray-600 rounded-lg text-[13px] font-medium">Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Add Item Form */}
         {showItemForm && (
@@ -300,16 +204,82 @@ export default function MenuManagement() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="sm:col-span-2">
                 <label className="text-xs text-gray-600 block mb-1.5">Category *</label>
-                <select
-                  value={newItem.category_id}
-                  onChange={e => { setNewItem({ ...newItem, category_id: e.target.value }); setPickedItem('') }}
-                  className={inputCls}
-                >
-                  <option value="">Select category</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+
+                {!inlineNewCategory ? (
+                  <select
+                    value={newItem.category_id}
+                    onChange={e => {
+                      if (e.target.value === '__new__') {
+                        setInlineNewCategory(true)
+                      } else {
+                        setNewItem({ ...newItem, category_id: e.target.value })
+                        setPickedItem('')
+                      }
+                    }}
+                    className={inputCls}
+                  >
+                    <option value="">Select category</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                    <option value="__new__">+ Add New Category</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="New category name"
+                      value={inlineCategoryName}
+                      onChange={e => setInlineCategoryName(e.target.value)}
+                      onKeyDown={async e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          if (!inlineCategoryName.trim() || !restaurantId) return
+                          const { data, error } = await supabase
+                            .from('menu_categories')
+                            .insert({ name: inlineCategoryName.trim(), restaurant_id: restaurantId, display_order: categories.length + 1, is_active: true })
+                            .select()
+                            .single()
+                          if (!error && data) {
+                            setCategories([...categories, data])
+                            setNewItem({ ...newItem, category_id: data.id })
+                            setInlineCategoryName('')
+                            setInlineNewCategory(false)
+                          }
+                        }
+                      }}
+                      className={inputCls + ' flex-1'}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!inlineCategoryName.trim() || !restaurantId) return
+                        const { data, error } = await supabase
+                          .from('menu_categories')
+                          .insert({ name: inlineCategoryName.trim(), restaurant_id: restaurantId, display_order: categories.length + 1, is_active: true })
+                          .select()
+                          .single()
+                        if (!error && data) {
+                          setCategories([...categories, data])
+                          setNewItem({ ...newItem, category_id: data.id })
+                          setInlineCategoryName('')
+                          setInlineNewCategory(false)
+                        }
+                      }}
+                      className="px-4 py-2 bg-[#C9A84C] text-white rounded-lg text-[13px] font-semibold whitespace-nowrap"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setInlineNewCategory(false); setInlineCategoryName('') }}
+                      className="px-3 py-2 bg-white border border-[#EBEBEB] text-gray-600 rounded-lg text-[13px] font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
 
               {newItem.category_id && (
@@ -397,7 +367,7 @@ export default function MenuManagement() {
 
             <div className="flex gap-2 mt-4">
               <button onClick={addItem} className="flex-1 sm:flex-none px-5 py-2 bg-[#C9A84C] text-white rounded-lg text-[13px] font-semibold">Save Item</button>
-              <button onClick={() => { setShowItemForm(false); setItemError(''); setPickedItem(''); setCustomItem(''); setNewItem({ name: '', price: '', prep_time: '10', description: '', category_id: '', image_url: '' }) }} className="flex-1 sm:flex-none px-5 py-2 bg-white border border-[#EBEBEB] text-gray-600 rounded-lg text-[13px] font-medium">Cancel</button>
+              <button onClick={() => { setShowItemForm(false); setItemError(''); setPickedItem(''); setCustomItem(''); setInlineNewCategory(false); setInlineCategoryName(''); setNewItem({ name: '', price: '', prep_time: '10', description: '', category_id: '', image_url: '' }) }} className="flex-1 sm:flex-none px-5 py-2 bg-white border border-[#EBEBEB] text-gray-600 rounded-lg text-[13px] font-medium">Cancel</button>
             </div>
           </div>
         )}
