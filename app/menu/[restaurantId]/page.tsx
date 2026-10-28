@@ -722,7 +722,7 @@ setShowCheckout(false)
           <div className="text-sm font-bold text-[#1E40AF]">{restaurant.upi_id}</div>
 
           <a
-            href={`upi://pay?pa=${encodeURIComponent(restaurant.upi_id)}&pn=${encodeURIComponent(restaurant.name)}&am=${cartTotal}&cu=INR&tn=${encodeURIComponent('Order payment')}`}
+           href={`upi://pay?pa=${encodeURIComponent(restaurant.upi_id.trim())}&pn=${encodeURIComponent(restaurant.name.trim())}&am=${Number(cartTotal).toFixed(2)}&cu=INR&tn=${encodeURIComponent('Order ' + (placedOrder?.serial_number || ''))}`}
             className="block text-center w-full py-3 bg-[#1E40AF] text-white rounded-lg font-semibold text-sm no-underline"
           >
             📱 Open UPI App

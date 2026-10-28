@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+const COMMON_CATEGORIES = ['Beverages', 'Snacks', 'Main Course', 'Desserts', 'Breakfast', 'Starters', 'Rice & Roti']
+
 type Category = {
   id: string
   name: string
@@ -205,6 +207,31 @@ export default function MenuManagement() {
               <div className="sm:col-span-2">
                 <label className="text-xs text-gray-600 block mb-1.5">Category *</label>
 
+                {/* Common category chips */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {COMMON_CATEGORIES.filter(c => !categories.some(cat => cat.name.toLowerCase() === c.toLowerCase())).map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={async () => {
+                        if (!restaurantId) return
+                        const { data, error } = await supabase
+                          .from('menu_categories')
+                          .insert({ name: c, restaurant_id: restaurantId, display_order: categories.length + 1, is_active: true })
+                          .select()
+                          .single()
+                        if (!error && data) {
+                          setCategories([...categories, data])
+                          setNewItem({ ...newItem, category_id: data.id })
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#EBEBEB] bg-white text-gray-700 hover:border-[#C9A84C] hover:bg-[#FBF7ED] transition"
+                    >
+                      + {c}
+                    </button>
+                  ))}
+                </div>
+
                 {!inlineNewCategory ? (
                   <select
                     value={newItem.category_id}
@@ -218,11 +245,11 @@ export default function MenuManagement() {
                     }}
                     className={inputCls}
                   >
-                    <option value="">Select category</option>
+                    <option value="">Select existing category</option>
                     {categories.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
-                    <option value="__new__">+ Add New Category</option>
+                    <option value="__new__">+ Add custom category</option>
                   </select>
                 ) : (
                   <div className="flex gap-2">
@@ -466,7 +493,12 @@ export default function MenuManagement() {
                   >
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-[#F8F8F8] border border-[#EBEBEB] flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {item.image_url ? (
-                        <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name} 
+                          className="w-full h-full object-cover" 
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-xl">🍽</span>' }}
+                        />
                       ) : (
                         <span className="text-xl">🍽</span>
                       )}
