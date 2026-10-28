@@ -174,8 +174,16 @@ useEffect(() => {
   // ── Generate serial ──────────────────────────────────────────────
   const generateSerial = () => String(Math.floor(1000 + Math.random() * 9000))
 
- const placeOrder = async () => {
+const placeOrder = async () => {
   if (cart.length === 0 || !restaurant) return
+  
+  // Add this check
+  if (!customerName.trim()) {
+    setOrderError('Please enter your name')
+    setOrderStatus('error')
+    return
+  }
+  
   setOrderStatus('placing')
   setOrderError('')
 
@@ -631,12 +639,12 @@ setShowCheckout(false)
                 <div className="text-[13px] font-semibold text-gray-500 mb-3">Your Details (optional)</div>
                 <div className="flex flex-col gap-2.5">
                   <input
-                    type="text"
-                    placeholder="Your name"
-                    value={customerName}
-                    onChange={e => setCustomerName(e.target.value)}
-                    className="px-3 py-2.5 border border-[#EBEBEB] rounded-lg text-sm text-[#111] outline-none focus:border-[#C9A84C] bg-white"
-                  />
+  type="text"
+  placeholder="Your name * (required)"
+  value={customerName}
+  onChange={e => setCustomerName(e.target.value)}
+  className="px-3 py-2.5 border border-[#EBEBEB] rounded-lg text-sm text-[#111] outline-none focus:border-[#C9A84C] bg-white"
+/>
                   <input
   type="tel"
   inputMode="numeric"
@@ -656,37 +664,37 @@ setShowCheckout(false)
 <div className="mt-5">
 
   {/* Payment Mind Map */}
-<div className="mb-4 bg-[#FBF7ED] border border-[#F5D98B] rounded-xl p-4">
-  <div className="text-[11px] font-bold text-[#92400E] tracking-wider uppercase mb-3">
-    How Payment Works
-  </div>
+  <div className="mb-4 bg-[#FBF7ED] border border-[#F5D98B] rounded-xl p-4">
+    <div className="text-[11px] font-bold text-[#92400E] tracking-wider uppercase mb-3">
+      How Payment Works
+    </div>
 
-  <div className="space-y-2.5">
-    <div className="flex items-start gap-2">
-      <span className="text-base">💵</span>
-      <div className="flex-1">
-        <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">Cash</div>
-        <div className="text-[11px] text-[#B45309] leading-relaxed">
-          Place order → Pay at counter → Owner confirms
+    <div className="space-y-2.5">
+      <div className="flex items-start gap-2">
+        <span className="text-base">💵</span>
+        <div className="flex-1">
+          <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">Cash</div>
+          <div className="text-[11px] text-[#B45309] leading-relaxed">
+            Place order → Pay at counter → Owner confirms
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-2">
+        <span className="text-base">📱</span>
+        <div className="flex-1">
+          <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">UPI</div>
+          <div className="text-[11px] text-[#B45309] leading-relaxed">
+            Place order → Pay via UPI app → Show to owner → Owner confirms
+          </div>
         </div>
       </div>
     </div>
 
-    <div className="flex items-start gap-2">
-      <span className="text-base">📱</span>
-      <div className="flex-1">
-        <div className="text-[12px] font-semibold text-[#92400E] mb-0.5">UPI</div>
-        <div className="text-[11px] text-[#B45309] leading-relaxed">
-          Place order → Pay via UPI app → Show to owner → Owner confirms
-        </div>
-      </div>
+    <div className="mt-3 pt-3 border-t border-[#F5D98B] text-[11px] text-[#92400E] font-medium leading-relaxed">
+      ⚠️ Food preparation starts only after owner confirms your payment.
     </div>
   </div>
-
-  <div className="mt-3 pt-3 border-t border-[#F5D98B] text-[11px] text-[#92400E] font-medium leading-relaxed">
-    ⚠️ Food preparation starts only after owner confirms your payment.
-  </div>
-</div>
 
   <div className="text-[13px] font-semibold text-gray-500 mb-3">Payment Method</div>
 
@@ -713,41 +721,74 @@ setShowCheckout(false)
   </div>
 
   {paymentMethod === 'upi' && (
-    <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 space-y-3">
+    <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 space-y-4">
       {restaurant?.upi_id ? (
         <>
-          <div className="text-[11px] font-semibold text-[#1E40AF] uppercase tracking-wider">
-            Pay ₹{cartTotal} to
-          </div>
-          <div className="text-sm font-bold text-[#1E40AF]">{restaurant.upi_id}</div>
-
-          <a
-           href={`upi://pay?pa=${encodeURIComponent(restaurant.upi_id.trim())}&pn=${encodeURIComponent(restaurant.name.trim())}&am=${Number(cartTotal).toFixed(2)}&cu=INR&tn=${encodeURIComponent('Order ' + (placedOrder?.serial_number || ''))}`}
-            className="block text-center w-full py-3 bg-[#1E40AF] text-white rounded-lg font-semibold text-sm no-underline"
-          >
-            📱 Open UPI App
-          </a>
-
-          <button
-            type="button"
-            onClick={() => setShowUpiQr(!showUpiQr)}
-            className="w-full py-2.5 bg-white border border-[#BFDBFE] text-[#1E40AF] rounded-lg font-semibold text-xs"
-          >
-            {showUpiQr ? 'Hide QR' : '🔳 Show QR Code'}
-          </button>
-
-          {showUpiQr && (
-            <div className="bg-white p-4 rounded-lg text-center">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-                  `upi://pay?pa=${restaurant.upi_id}&pn=${encodeURIComponent(restaurant.name)}&am=${cartTotal}&cu=INR&tn=${encodeURIComponent('Order payment')}`
-                )}`}
-                alt="UPI QR"
-                className="w-full max-w-[200px] mx-auto"
-              />
-              <p className="text-[10px] text-gray-500 mt-2">Scan with any UPI app</p>
+          {/* Header & Amount */}
+          <div className="text-center">
+            <div className="text-[11px] font-semibold text-[#1E40AF] uppercase tracking-wider mb-1">
+              Pay ₹{cartTotal}
             </div>
-          )}
+            <div className="text-sm font-bold text-[#1E40AF]">{restaurant.upi_id}</div>
+          </div>
+
+          {/* QR Code Area */}
+          <div className="bg-white p-4 rounded-xl flex flex-col items-center shadow-sm">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                `upi://pay?pa=${restaurant.upi_id}&pn=${encodeURIComponent(restaurant.name)}&cu=INR`
+              )}`}
+              alt="UPI QR"
+              className="w-full max-w-[200px] mb-3"
+            />
+            
+            {/* Download QR Button */}
+            <a
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+                `upi://pay?pa=${restaurant.upi_id}&pn=${encodeURIComponent(restaurant.name)}&cu=INR`
+              )}`}
+              download={`UPI-QR-${restaurant.name}.png`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full py-2 bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE] rounded-lg text-xs font-semibold text-center no-underline mb-2"
+            >
+              ⬇ Save QR to Phone
+            </a>
+          </div>
+
+          {/* Mind Map Instructions */}
+          <div className="bg-[#FBF7ED] border border-[#F5D98B] rounded-xl p-3.5">
+            <div className="text-[10px] font-bold text-[#92400E] tracking-wider uppercase mb-2">
+              How to pay on this phone
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-[#B45309] mt-0.5">1.</span>
+                <div className="text-[11px] text-[#92400E] leading-tight">
+                  Tap <strong>Save QR to Phone</strong> (or take a screenshot).
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-[#B45309] mt-0.5">2.</span>
+                <div className="text-[11px] text-[#92400E] leading-tight">
+                  Open GPay / PhonePe / Paytm.
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-[#B45309] mt-0.5">3.</span>
+                <div className="text-[11px] text-[#92400E] leading-tight">
+                  Tap <strong>Scan</strong> → choose <strong>Upload from Gallery</strong> → select the saved QR.
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-[#B45309] mt-0.5">4.</span>
+                <div className="text-[11px] text-[#92400E] leading-tight">
+                  Enter amount <strong>₹{cartTotal}</strong> and complete payment.
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="text-[10px] text-[#1E40AF] text-center leading-relaxed">
             After payment, tap "I've Paid" below. Owner will verify and start preparing.
@@ -762,7 +803,7 @@ setShowCheckout(false)
   )}
 </div>
 
-              <button
+<button
   onClick={placeOrder}
   disabled={orderStatus === 'placing'}
   className="w-full py-4 bg-[#C9A84C] text-white rounded-xl text-[15px] font-bold disabled:opacity-70 mt-4"

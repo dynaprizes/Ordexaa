@@ -494,11 +494,17 @@ export default function MenuManagement() {
                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-[#F8F8F8] border border-[#EBEBEB] flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {item.image_url ? (
                         <img 
-                          src={item.image_url} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover" 
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-xl">🍽</span>' }}
-                        />
+  src={item.image_url} 
+  alt={item.name} 
+  className="w-full h-full object-cover" 
+  onError={e => { 
+    const img = e.target as HTMLImageElement
+    img.onerror = null  // prevent infinite loop
+    img.src = ''        // clear broken src
+    img.style.display = 'none'
+    img.parentElement!.innerHTML = '<span class="text-xl">🍽</span>'
+  }}
+/>
                       ) : (
                         <span className="text-xl">🍽</span>
                       )}
