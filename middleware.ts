@@ -27,7 +27,6 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protect /dashboard routes (except /dashboard/setup)
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
   const isSetup = request.nextUrl.pathname === '/dashboard/setup'
   const isLogin = request.nextUrl.pathname === '/auth/login'
@@ -51,6 +50,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Only run middleware on these specific routes:
+     * - /dashboard (and all sub-routes)
+     * - /auth/login
+     * This prevents the middleware from running on the homepage or customer menu,
+     * which was causing the 25s Vercel timeout.
+     */
+    '/dashboard/:path*',
+    '/auth/login',
   ],
 }
